@@ -1,0 +1,20 @@
+from joblib import Parallel, delayed
+
+#---------- core func ----------#
+def parallel_map_serie(serie, mapped_func, nb_chunk=8):
+    retLst = Parallel(n_jobs=-1)(delayed(map_serie_chunk)(serie, mapped_func, i, compute_chunk_id(serie,nb_chunk)) for i in range(nb_chunk))
+    return pd.concat(retLst)
+
+# ------- intermediate -----------------------#   
+def compute_chunk_id(serie, nb_chunk):
+    chunk_size = int(len(serie)/nb_chunk)
+    chunk_idx = [min(i*chunk_size, len(serie)) for i in range(nb_chunk)]
+    return chunk_idx  
+
+def map_serie(serie,  func):
+    return serie.map(lambda x: func(x))
+
+def map_serie_chunk(serie, func, i, chunk_id):
+    borne_max = chunk_id[i+1] if i+1<len(chunk_id) else serie.shape[0]
+    base = serie.iloc[chunk_id[i]:borne_max]
+    return map_serie(base, func)
